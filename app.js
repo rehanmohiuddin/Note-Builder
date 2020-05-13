@@ -40,7 +40,7 @@ app.use("/api",orderRoutes);
 app.use("/api",stripeRoutes);
 app.use("/api",paymentsBRoute);
 
-const port = 8000;
+const port =process.env.PORT || 5000;
 console.log(port);
 
 app.listen(port,()=> {
