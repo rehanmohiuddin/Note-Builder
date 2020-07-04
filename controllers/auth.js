@@ -1,9 +1,21 @@
-const User=require("../models/user")
+const User=require("../models/user");
+const Code = require("../models/code")
 const {check,validationResult} = require("express-validator");
 var jwt =require("jsonwebtoken");
 var expressjwt=require("express-jwt");
-exports.signup =(req,res)=>{
 
+const sgMail = require('@sendgrid/mail');
+
+const nodemailer = require('nodemailer');
+
+sgMail.setApiKey("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");
+exports.signup =(req,res)=>{
+    const user=new User({
+        name:req.body.name,
+        email:req.body.email,
+        password:req.body.password
+    });
+    
     const errors = validationResult(req);
     
     if(!errors.isEmpty()){
@@ -12,20 +24,71 @@ exports.signup =(req,res)=>{
             error:errors.array()[0].param
         })
     }
-    const user = new User(req.body);
-    user.save((err,user) =>{
+    console.log(req.body.code)
+    Code.findOneAndDelete({ code: req.body.code}, function (err, docs) {
         if(err){
             return res.status(400).json({
-                err:"Not ABle To Save in DB"
+                error:"Error"
+            });
+        }
+        if(docs===null){
+            return res.json({
+                Error:"Code Not Found"
             })
         }
-        res.json({
-            name:user.name,
-            email:user.email,
-            id:user._id
+  
+     else{
+        console.log(docs)
+        user.save((err,user) =>{
+            if(err){
+                return res.status(400).json({
+                    err:"Not ABle To Save in DB"
+                })
+            }
+            res.json({
+                name:user.name,
+                email:user.email,
+                id:user._id
+            });
+    
+          
         });
-    });
+     }
+       
+    })
 };
+
+exports.verify=(req,res)=>{
+    const cd= Math.random().toString(36).substring(7);
+    const code = new Code({
+        code:cd
+    })
+    code.save((err,code)=>{
+        if(err){
+            return res.status(400).json({
+                err:"Not ABle To Save Code in DB"
+            })
+        }
+        console.log(req.body)
+        const msg = {
+            to: `${req.body.email} <${req.body.email}>`,
+            from: 'mohiuddinrehan40@gmail.com',
+            subject: `Conformation Code ${cd}`,
+            html: `Conformation Code ${cd}`
+          };
+    
+          sgMail.send(msg)
+       .then(()=>{
+            console.log("Email Sent")
+            res.json({
+                Message:"Success"
+            })
+        })
+        .catch((err)=>{
+            console.log(err)
+        })
+    })
+}
 
 exports.signin = (req,res) => {
     const errors = validationResult(req);
