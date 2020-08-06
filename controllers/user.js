@@ -1,6 +1,6 @@
 const User = require("../models/user");
-const Order =require("../models/order");
 
+const Note = require('../models/notes')
 
 exports.getUserById = (req,res,next,id) =>{
     User.findById(id).exec((err,user)=>{
@@ -39,52 +39,16 @@ exports.updateUser=(req,res)=>{
     )
 }
 
-exports.userPurchaselist=(req,res)=>{
-    Order.find({user:req.profile._id})
-    .populate("User","_id name")
-    .exec((err,order)=>{
-        if (err){
+exports.getUserNotes=(req,res)=>{
+    Note.findOne({userId:req.params.userId})
+    .exec((err,note)=>{
+        if(err || !note){
             return res.status(400).json({
-                error:"No Oreders In The Account"
+                error:'No Found'
             })
         }
-        return res.json(order);
+        res.json(note)
     })
-
-};
-
-exports.pushOrderInPurchaseList=(req,res,next)=>{
-    let purchases =[];
-    req.body.order.products.forEach(product =>{
-        purchases.push({
-            _id:product._id,
-            name:product.name,
-            description:product.description,
-            category:product.category,
-            quantity:product.quantity,
-            amount:req.body.order.amount,
-            transaction_id:req.body.order.transaction_id
-
-        })
-    })
-    
-//store this in db
-User.findOneAndUpdate(
-    {_id:req.profile._id},
-    {$push:{purchases:purchases}},
-    {new:true},
-    (err,purchases)=>{
-        if(err){
-            return res.stat(400).json({
-                error:"Unable to save purchase list"
-            })
-        }
-        next();
-
-    }
-)
-    
-
-    
 }
+
 

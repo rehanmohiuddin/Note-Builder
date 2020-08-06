@@ -1,14 +1,16 @@
 const User=require("../models/user");
-const Code = require("../models/code")
+
 const {check,validationResult} = require("express-validator");
 var jwt =require("jsonwebtoken");
 var expressjwt=require("express-jwt");
 
-const sgMail = require('@sendgrid/mail');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const mongoose = require('mongoose');
+const keys = require('../keys');
 
-const nodemailer = require('nodemailer');
 
-sgMail.setApiKey("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");
+
 exports.signup =(req,res)=>{
     const user=new User({
         name:req.body.name,
@@ -24,25 +26,11 @@ exports.signup =(req,res)=>{
             error:errors.array()[0].param
         })
     }
-    console.log(req.body.code)
-    Code.findOneAndDelete({ code: req.body.code}, function (err, docs) {
-        if(err){
-            return res.status(400).json({
-                error:"Error"
-            });
-        }
-        if(docs===null){
-            return res.json({
-                Error:"Code Not Found"
-            })
-        }
   
-     else{
-        console.log(docs)
         user.save((err,user) =>{
             if(err){
                 return res.status(400).json({
-                    err:"Not ABle To Save in DB"
+                    err:err
                 })
             }
             res.json({
@@ -53,42 +41,11 @@ exports.signup =(req,res)=>{
     
           
         });
-     }
+     
        
-    })
+   
 };
 
-exports.verify=(req,res)=>{
-    const cd= Math.random().toString(36).substring(7);
-    const code = new Code({
-        code:cd
-    })
-    code.save((err,code)=>{
-        if(err){
-            return res.status(400).json({
-                err:"Not ABle To Save Code in DB"
-            })
-        }
-        console.log(req.body)
-        const msg = {
-            to: `${req.body.email} <${req.body.email}>`,
-            from: 'mohiuddinrehan40@gmail.com',
-            subject: `Conformation Code ${cd}`,
-            html: `Conformation Code ${cd}`
-          };
-    
-          sgMail.send(msg)
-       .then(()=>{
-            console.log("Email Sent")
-            res.json({
-                Message:"Success"
-            })
-        })
-        .catch((err)=>{
-            console.log(err)
-        })
-    })
-}
 
 exports.signin = (req,res) => {
     const errors = validationResult(req);
@@ -147,11 +104,31 @@ exports.isAuthenticated=(req,res,next)=>{
     }
     next();
 };
-exports.isAdmin=(req,res,next)=>{
-    if(req.profile.role === 0){
-        return res.status(403).json({
-            error:"You are Not Admin"
-        });
-    }
-    next();
-};
+
+exports.signInwithGoogle=(req,res)=>{
+    passport.use(
+        new GoogleStrategy({
+            clientID: keys.google.clientID,
+            clientSecret: keys.google.clientSecret,
+            callbackURL: '/auth/google/redirect'
+        }, (accessToken, refreshToken, profile, done) => {
+            // passport callback function
+            //check if user already exists in our db with the given profile ID
+            User.findOne({googleId: profile.id}).then((currentUser)=>{
+              if(currentUser){
+                //if we already have a record with the given profile ID
+                done(null, currentUser);
+              } else{
+                   //if not, create a new user 
+                  new User({
+                    googleId: profile.id,
+                  }).save().then((newUser) =>{
+                    done(null, newUser);
+                  });
+               } 
+            })
+          })
+          
+      );
+      
+}
