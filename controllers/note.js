@@ -1,43 +1,13 @@
 const Note = require("../models/notes");
-const formidable =require("formidable");
-const _=require("lodash");
-const fs=require("fs");
-var multer  = require('multer');
-
-const storage = multer.diskStorage({
-    destination: function(req, file, cb) {
-      cb(null, './uploads/');
-    },
-    filename: function(req, file, cb) {
-      cb(null, new Date().toISOString() + file.originalname);
-    }
-  });
-  
-  const fileFilter = (req, file, cb) => {
-    // reject a file
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
-      cb(null, true);
-    } else {
-      cb(null, false);
-    }
-  };
-  
-  const upload = multer({
-    storage: storage,
-    limits: {
-      fileSize: 1024 * 1024 * 5
-    },
-    fileFilter: fileFilter
-  });
 
 exports.getNoteById =(req,res,next,id)=>{
-    Product.findById(id).exec((err,pro)=>{
+    Note.findById(id).exec((err,not)=>{
         if(err){
             return res.status(400).json({
                 error:"Note Not Found"
             });
         }
-        req.product=pro;
+        req.note=not;
         next();
     });
 }
@@ -46,6 +16,7 @@ exports.createNote=(req,res)=>{
     const note = new Note(req.body)
     note.save((err,notE)=>{
         if(err){
+            console.log(err)
             return res.status(400).json({
                 error:err
             })
@@ -59,8 +30,8 @@ exports.createNote=(req,res)=>{
 
 
 exports.deleteNote =(req,res)=>{
-    let product = req.body;
-    product.remove((err,deletednote)=>{
+    let note = req.note;
+    note.remove((err,deletednote)=>{
         if(err){
             return res.status(400).json({
                 error:"Failed To Delete The Note"
@@ -74,15 +45,19 @@ exports.deleteNote =(req,res)=>{
 
 exports.updateNote =(req,res)=>{
     
-     let note = req.body
+     let note = req.note
+     console.log('note',req.body.description)
+     note.title=req.body.title
+     note.description=req.body.description
 
-        note.save((err,note)=>{
+        note.save((err,noteUpdated)=>{
             if (err){
+                console.log(err)
                 return res.status(400).json({
-                    error:"Saving Failed"
+                    error:err
                 })
             }
-            res.json(note);
+            res.json(noteUpdated);
         })
 
 }

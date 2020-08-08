@@ -40,7 +40,7 @@ exports.updateUser=(req,res)=>{
 }
 
 exports.getUserNotes=(req,res)=>{
-    Note.findOne({userId:req.params.userId})
+    Note.find({userId:req.params.userId})
     .exec((err,note)=>{
         if(err || !note){
             return res.status(400).json({

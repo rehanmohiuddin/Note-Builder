@@ -7,7 +7,8 @@ const {isSignedIn,isAuthenticated,isAdmin}=require("../controllers/auth");
 router.param("userId",getUserById);
 
 router.get("/user/:userId",isSignedIn,isAuthenticated,getUserNotes);
-router.put("/user/:userId",isSignedIn,isAuthenticated,updateUser)
+router.put("/user/:userId",isSignedIn,isAuthenticated,updateUser);
+
 
 
 module.exports = router;

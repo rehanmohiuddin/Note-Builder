@@ -26,9 +26,12 @@ var userSchema=new schema ({
         trim:true,
     },
 
+    googleId:{
+        type:String
+    },
+
     encry_password:{
         type:String,
-        required:true,
     },
     salt:String,
   
